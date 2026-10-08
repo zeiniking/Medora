@@ -152,6 +152,8 @@ label{display:block;font-size:13px;font-weight:700;color:var(--mu);margin:14px 0
    <div class="set"><div>🌙 Dark Mode</div><button class="sw" id="sD" data-act="tD" aria-label="Dark mode"></button></div>
    <div class="set"><div>🔊 Reminder Sound</div><button class="sw" id="sS" data-act="tS" aria-label="Sound"></button></div>
    <div class="set"><div>🎵 Ringtone</div><div style="display:flex;gap:6px"><select id="tn"></select><button class="a sq" data-act="prev" aria-label="Preview ringtone">▶</button></div></div>
+   <div class="set"><div>🔔 Permissions<small>Notifications &amp; alarms</small></div><button class="a sq" style="width:auto;padding:0 14px" data-act="pAllow">Allow</button></div>
+   <div class="set"><div>🧪 Test alarm<small>Rings in 10 seconds</small></div><button class="a sq" style="width:auto;padding:0 14px" data-act="tAlarm">Test</button></div>
    <div class="set"><div>⏰ Default Snooze</div><select id="sz"><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="30">30 min</option></select></div>
   </div>
   <div class="card"><b>📲 Alarms when Medora is closed</b><p class="hint" style="margin:6px 0 12px">Export your medicine times to your phone's Calendar. The Calendar app then rings a reminder at each time, every day, even when Medora is closed. After adding, open Calendar settings and pick a notification sound and "alert" importance. Export again after you change any medicine.</p><button class="big" style="margin:0" data-act="ics">Export to phone calendar (.ics)</button></div>
@@ -185,6 +187,7 @@ label{display:block;font-size:13px;font-weight:700;color:var(--mu);margin:14px 0
 
 <div class="ov mid" id="ro"><div class="sheet"><div class="bell">🔔</div><h2>💊 Medicine Reminder</h2><p id="r1" style="color:var(--mu)"></p><div class="rm" id="r2"></div><p id="r3"></p>
  <div class="two"><button class="p" data-act="rTake">✓ Taken</button><button id="rSn" data-act="rSnz">⏰ Snooze</button></div></div></div>
+<div class="ov mid" id="po"><div class="sheet"><div class="bell">🔔</div><h2>Allow permissions</h2><p style="color:var(--mu)">Medora needs these to ring your medicine alarm, even when the app is closed:</p><p style="text-align:left;margin:12px 0;line-height:1.9">🔔 Notifications<br>⏰ Alarms &amp; reminders<br>🔋 Battery: set Medora to Unrestricted</p><div class="two"><button data-act="pLater">Later</button><button class="p" data-act="pAllow">Allow</button></div></div></div>
 <div id="toast" role="status"></div>
 
 <script>
@@ -319,15 +322,39 @@ function take(id,t){const m=S.meds.find(x=>x.id===id);if(!m)return;m.taken=m.tak
 function snooze(id,t){const m=S.meds.find(x=>x.id===id);if(!m)return;m.sn[t]=Date.now()+S.set.snooze*60000;m.al[t]=ymd(new Date());save();render();toast("Reminder snoozed for "+S.set.snooze+" minutes")}
 function setView(v){document.querySelectorAll(".view").forEach(e=>e.classList.toggle("on",e.id==="v-"+v));document.querySelectorAll("nav [data-v]").forEach(b=>b.classList.toggle("on",b.dataset.v===v));scrollTo(0,0)}
 // ---- native Android alarms (active only inside the Capacitor Android app)
-const LN=()=>{const c=window.Capacitor;return c&&c.isNativePlatform&&c.isNativePlatform()&&c.Plugins?c.Plugins.LocalNotifications:null};
-let exAsked=false;
+let _ln=null;
+const LN=()=>{const c=window.Capacitor;if(!(c&&c.isNativePlatform&&c.isNativePlatform()))return null;if(_ln)return _ln;try{_ln=(c.Plugins&&c.Plugins.LocalNotifications)||c.registerPlugin("LocalNotifications")}catch(e){_ln=null}return _ln};
+async function permState(){const ln=LN();if(!ln)return null;let n="granted",x="granted";
+ try{n=(await ln.checkPermissions()).display}catch(e){}
+ try{x=(await ln.checkExactNotificationSetting()).exact_alarm}catch(e){}
+ return{n:n,x:x}}
+async function ensureChannels(ln){for(const k in TONES)await ln.createChannel({id:"medora_"+k,name:"Reminders - "+TONES[k].n,importance:5,visibility:1,vibration:true,sound:k+".wav"})}
+function closePerm(later){$("#po").classList.remove("on");if(later&&!LN()){S.set.askedWeb=true;save()}}
+async function askPerms(){
+ try{const ln=LN();
+  if(ln){const st=await permState();
+   if(st.n!=="granted"){const r=await ln.requestPermissions();st.n=r.display}
+   if(st.n!=="granted")toast("Notifications are blocked. Open phone Settings > Apps > Medora > Notifications and allow them.");
+   else if(st.x!=="granted"){toast("Turn ON 'Alarms & reminders' for Medora");await ln.changeExactNotificationSetting()}
+  }else if("Notification"in window&&Notification.permission==="default")await toggleNotif();
+  else toast("Nothing more to allow here");
+ }catch(e){toast("Permission problem: "+((e&&e.message)||e))}
+ closePerm();syncNative()}
+async function checkPerms(){let need=false;
+ if(LN()){const s=await permState();need=s.n!=="granted"||s.x!=="granted"}
+ else need="Notification"in window&&Notification.permission==="default"&&!S.set.askedWeb;
+ if(need)$("#po").classList.add("on")}
+async function testAlarm(){const ln=LN();
+ if(!ln){toast("The phone alarm test works inside the Android app");play(S.set.tone);return}
+ try{const st=await permState();if(st.n!=="granted"){askPerms();return}
+  await ensureChannels(ln);
+  await ln.schedule({notifications:[{id:999999,title:"💊 Test alarm",body:"Medora alarm is working",channelId:"medora_"+(TONES[S.set.tone]?S.set.tone:"classic"),schedule:{at:new Date(Date.now()+10000),allowWhileIdle:true}}]});
+  toast("Close the app now. The alarm rings in 10 seconds")}catch(e){toast("Test failed: "+((e&&e.message)||e))}}
 async function syncNative(){const ln=LN();if(!ln)return;
  try{
-  let pr=await ln.checkPermissions();if(pr.display!=="granted")pr=await ln.requestPermissions();
-  if(pr.display!=="granted"){toast("Allow notifications to get alarms");return}
-  if(!exAsked){exAsked=true;const ex=await ln.checkExactNotificationSetting();if(ex.exact_alarm!=="granted"){toast("Please allow Alarms & reminders for Medora");await ln.changeExactNotificationSetting()}}
+  const st=await permState();if(st.n!=="granted")return;
   const pd=await ln.getPending();if(pd.notifications.length)await ln.cancel({notifications:pd.notifications.map(x=>({id:x.id}))});
-  for(const k in TONES)await ln.createChannel({id:"medora_"+k,name:"Reminders - "+TONES[k].n,importance:5,visibility:1,vibration:true,sound:k+".wav"});
+  await ensureChannels(ln);
   const now=Date.now(),L=[];let id=1;
   const add=(m,t,at)=>{if(L.length<450)L.push({id:id++,title:"💊 Medicine Reminder",body:m.person+": "+m.name+" - "+m.dose+" ("+fmt(t)+")",channelId:"medora_"+(TONES[m.tone]?m.tone:TONES[S.set.tone]?S.set.tone:"classic"),schedule:{at:at,allowWhileIdle:true},extra:{mid:m.id,t:t}})};
   S.meds.forEach(m=>m.times.forEach(t=>{const a=mins(t);
@@ -337,7 +364,7 @@ async function syncNative(){const ln=LN();if(!ln)return;
     if(at.getTime()>now)add(m,t,at)}
    if(m.sn[t]&&m.sn[t]>now)add(m,t,new Date(m.sn[t]))}));
   if(L.length)await ln.schedule({notifications:L})
- }catch(e){}}
+ }catch(e){toast("Alarm setup problem: "+((e&&e.message)||e))}}
 function exportIcs(){
  const now=new Date(),E=x=>String(x).replace(/[\\;,]/g,"\\$&").replace(/\n/g,"\\n"),BD=["SU","MO","TU","WE","TH","FR","SA"],L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Medora//EN","CALSCALE:GREGORIAN"];
  const st=now.getUTCFullYear()+p2(now.getUTCMonth()+1)+p2(now.getUTCDate())+"T"+p2(now.getUTCHours())+p2(now.getUTCMinutes())+p2(now.getUTCSeconds())+"Z";let c=0;
@@ -390,6 +417,9 @@ document.addEventListener("click",e=>{
   case"pre":FM.times=FM.times.filter(x=>x);if(!FM.times.includes(b.dataset.t))FM.times.push(b.dataset.t);paintTimes();break;
   case"prev":play(S.set.tone);break;
   case"ics":exportIcs();break;
+  case"pAllow":askPerms();break;
+  case"pLater":closePerm(true);break;
+  case"tAlarm":testAlarm();break;
   case"tN":toggleNotif();break;
   case"tD":S.set.dark=!S.set.dark;save();render();break;
   case"tS":S.set.sound=!S.set.sound;save();render();play(S.set.tone);break;
@@ -442,7 +472,7 @@ function tick(){
  if(!$("#fo").classList.contains("on"))render();
 }
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)tick()});
-render();tick();setInterval(tick,15000);syncNative();
+render();tick();setInterval(tick,15000);syncNative();setTimeout(checkPerms,1200);
 </script>
 </body>
 </html>
