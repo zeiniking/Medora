@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#3730a3">
+<title>Medora - Smart Medicine Reminder</title>
+<style>
+:root{--bg:#eef1fb;--card:#fff;--tx:#1b1f4b;--mu:#6b7194;--pr:#4338ca;--pr2:#2563eb;--ln:#e3e7f7;--ok:#16a34a;--okb:#e8f8ee;--bad:#e11d48;--badb:#ffe9ee;--warn:#d97706;--sh:0 6px 20px rgba(49,46,129,.10);--in:#f4f6fe}
+[data-theme=dark]{--bg:#0e1124;--card:#181c38;--tx:#e9ebff;--mu:#9aa0c8;--pr:#8b93ff;--pr2:#60a5fa;--ln:#272c52;--ok:#4ade80;--okb:#14301f;--bad:#fb7185;--badb:#3a1523;--warn:#fbbf24;--sh:0 6px 20px rgba(0,0,0,.45);--in:#20254a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
+[hidden]{display:none!important}
+html,body{background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;transition:transform .12s,background .2s}
+button:active{transform:scale(.95)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--pr);outline-offset:2px}
+.app{max-width:560px;margin:0 auto;min-height:100vh;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+.hd{background:linear-gradient(135deg,#312e81,#3b5bdb 60%,#2563eb);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 18px 70px;border-radius:0 0 30px 30px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand h1{font-size:26px;letter-spacing:-.5px;line-height:1}
+.brand p{font-size:13px;opacity:.8;margin-top:3px}
+.logo{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center}
+.ib{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;color:#fff}
+.date{margin-top:16px;font-size:15px;opacity:.9}
+main{padding:0 16px;margin-top:-48px}
+.view{display:none}.view.on{display:block;animation:fi .3s}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border-radius:20px;box-shadow:var(--sh);padding:16px;margin-bottom:12px}
+.prog h2{font-size:17px}.prog p{color:var(--mu);font-size:14px;margin:4px 0 12px}
+.pct{font-size:30px;font-weight:800;color:var(--pr)}
+.bar{height:10px;background:var(--in);border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,var(--pr),var(--pr2));transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.big{width:100%;padding:16px;border-radius:16px;background:linear-gradient(135deg,var(--pr),var(--pr2));color:#fff;font-weight:700;font-size:17px;box-shadow:0 8px 18px rgba(67,56,202,.35);margin-bottom:14px}
+.sbar{display:flex;gap:8px;margin-bottom:12px}
+.sbar input{flex:1}
+input,select{width:100%;font:inherit;color:var(--tx);background:var(--in);border:1.5px solid var(--ln);border-radius:12px;padding:12px 14px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.ch{flex:none;padding:9px 14px;border-radius:20px;background:var(--card);border:1.5px solid var(--ln);font-size:14px;font-weight:600;color:var(--mu)}
+.ch.on{background:var(--pr);border-color:var(--pr);color:#fff}
+[data-theme=dark] .ch.on{color:#0e1124}
+.pf{margin-bottom:6px}
+h2.t{font-size:19px;margin:14px 2px 8px}
+.sec{font-size:14px;font-weight:700;color:var(--mu);margin:14px 4px 8px}
+.med{border-left:5px solid var(--pr);animation:fi .3s}
+.med.taken{background:var(--okb);border-left-color:var(--ok)}
+.med.missed{border-left-color:var(--bad)}
+.med.off{opacity:.75;border-left-color:var(--ln)}
+.top{display:flex;align-items:center;gap:12px}
+.ico{width:46px;height:46px;border-radius:14px;background:var(--in);display:grid;place-items:center;font-size:24px;flex:none}
+.mt{flex:1;min-width:0}.mt h3{font-size:18px;overflow-wrap:anywhere}.mt p{font-size:14px;color:var(--mu)}
+.bd{font-size:12px;font-weight:700;padding:5px 10px;border-radius:12px;background:var(--in);color:var(--mu);white-space:nowrap}
+.taken .bd{background:var(--ok);color:#fff}.missed .bd{background:var(--badb);color:var(--bad)}
+.snz .bd{color:var(--warn)}
+.meta{display:flex;flex-wrap:wrap;gap:8px 14px;margin:12px 0 4px;font-size:14px}
+.note{font-size:13px;color:var(--mu);font-style:italic;margin-top:4px}
+.acts{display:flex;gap:8px;margin-top:12px}
+.a{flex:1;padding:11px 8px;border-radius:12px;font-weight:700;font-size:14px;background:var(--in)}
+.a.ok{background:var(--ok);color:#fff}.a.sn{background:#fff4dd;color:#9a5b00}
+[data-theme=dark] .a.sn{background:#3a2c0d;color:var(--warn)}
+.a.sq{flex:none;width:44px}
+.empty{text-align:center;padding:36px 20px}
+.empty .e{font-size:64px;animation:fl 2.5s ease-in-out infinite}
+@keyframes fl{50%{transform:translateY(-8px)}}
+.empty h3{margin:10px 0 6px}.empty p{color:var(--mu);margin-bottom:18px}
+.ring{display:grid;place-items:center;position:relative;margin:6px auto 4px;width:170px;height:170px}
+.ring svg{transform:rotate(-90deg)}
+.ring b{position:absolute;font-size:36px;color:var(--pr)}
+.ring span{position:absolute;margin-top:46px;font-size:13px;color:var(--mu)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.st{text-align:center;margin:0}.st b{display:block;font-size:30px}.st span{font-size:13px;color:var(--mu)}
+.set{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--ln)}
+.set:last-child{border:0}.set small{display:block;color:var(--mu);font-size:12px;margin-top:2px}
+.set select{width:auto}
+.sw{width:52px;height:30px;border-radius:20px;background:var(--ln);position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.sw.on{background:var(--pr)}.sw.on::after{left:25px}
+nav{position:fixed;bottom:0;left:0;right:0;max-width:560px;margin:auto;background:var(--card);display:flex;justify-content:space-around;align-items:center;padding:8px 8px calc(8px + env(safe-area-inset-bottom));border-radius:24px 24px 0 0;box-shadow:0 -6px 24px rgba(49,46,129,.15);z-index:20}
+nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;color:var(--mu);padding:6px 14px;font-weight:600}
+nav button.on{color:var(--pr)}
+nav .fab{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--pr),var(--pr2));color:#fff;font-size:30px;margin-top:-30px;box-shadow:0 8px 18px rgba(67,56,202,.4);justify-content:center;padding:0}
+.ov{position:fixed;inset:0;background:rgba(10,12,40,.55);z-index:50;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.ov.on{opacity:1;pointer-events:auto}
+.ov.mid{align-items:center;padding:20px}
+.sheet{background:var(--card);width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border-radius:26px 26px 0 0;padding:20px 18px calc(22px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.ov.on .sheet{transform:none}
+.mid .sheet{border-radius:24px;max-width:380px;text-align:center;transform:scale(.85);transition:transform .25s}
+.mid.on .sheet{transform:none}
+.sheet h2{font-size:21px;margin-bottom:14px}
+label{display:block;font-size:13px;font-weight:700;color:var(--mu);margin:14px 0 6px}
+.err{color:var(--bad);font-size:12px;margin-top:4px;min-height:0}
+.ch.d{padding:8px 11px}
+.wrap{display:flex;flex-wrap:wrap;gap:8px}
+.two{display:flex;gap:10px;margin-top:20px}
+.two button{flex:1;padding:14px;border-radius:14px;font-weight:700;background:var(--in)}
+.two .p{background:linear-gradient(135deg,var(--pr),var(--pr2));color:#fff}
+.two .dg{background:var(--bad);color:#fff}
+.bell{font-size:56px;animation:rg .6s infinite alternate}
+@keyframes rg{from{transform:rotate(-14deg)}to{transform:rotate(14deg)}}
+.rm{margin:10px 0;font-size:20px;font-weight:800}
+.hint{font-size:12px;color:var(--mu);margin-top:8px}
+#toast{position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:#1b1f4b;color:#fff;padding:12px 18px;border-radius:14px;font-size:14px;opacity:0;pointer-events:none;transition:.3s;z-index:90;max-width:90%;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.tr{display:flex;gap:8px;margin-bottom:8px}.tr button{width:46px;border-radius:12px;background:var(--badb);color:var(--bad);font-weight:700}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="hd">
+ <div class="row">
+  <div class="brand">
+   <div class="logo"><svg width="30" height="30" viewBox="0 0 32 32"><rect x="3" y="11" width="26" height="10" rx="5" transform="rotate(-40 16 16)" fill="#fff"/><path d="M11.5 22.5 20.5 9.5a5 5 0 0 1 7 7l-9 13z" fill="none"/><path d="M8.8 22.8a5 5 0 0 1-.1-7l5.6-5.6 7.1 7.1-5.6 5.6a5 5 0 0 1-7 -.1z" fill="#fff"/><path d="M14.3 10.2l7.1 7.1 3.5-3.5a5 5 0 0 0-7.1-7.1z" fill="#93c5fd"/></svg></div>
+   <div><h1>Medora</h1><p>Smart Medicine Reminder</p></div>
+  </div>
+  <button class="ib" id="bS" data-act="search" aria-label="Search"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
+ </div>
+ <div class="date" id="date"></div>
+</header>
+<main>
+ <section class="view on" id="v-home">
+  <div class="card prog">
+   <div class="row"><h2>Today's Progress</h2><span class="pct" id="pp">0%</span></div>
+   <p id="pt">No medicines scheduled today</p>
+   <div class="bar"><i id="pb"></i></div>
+  </div>
+  <div class="sbar" id="sbar" hidden><input id="q" type="search" placeholder="Search person or medicine" autocomplete="off"><button class="ch" data-act="clearq">Clear</button></div>
+  <div class="chips" id="chips">
+   <button class="ch on" data-f="today">Today</button><button class="ch" data-f="all">All</button><button class="ch" data-f="taken">Taken</button><button class="ch" data-f="pending">Pending</button><button class="ch" data-f="missed">Missed</button>
+  </div>
+  <select id="pf" class="pf" aria-label="Filter by person"></select>
+  <button class="big" data-act="add">+ Add Medicine</button>
+  <h2 class="t" id="lt">Today's Medicines</h2>
+  <div id="list"></div>
+ </section>
+ <section class="view" id="v-stats">
+  <h2 class="t" style="margin-top:60px;color:#fff;display:none"></h2>
+  <div class="card" style="text-align:center"><h2 style="font-size:17px">Today's adherence</h2>
+   <div class="ring"><svg width="170" height="170" viewBox="0 0 170 170"><circle cx="85" cy="85" r="72" fill="none" stroke="var(--in)" stroke-width="16"/><circle id="rc" cx="85" cy="85" r="72" fill="none" stroke="var(--pr)" stroke-width="16" stroke-linecap="round" stroke-dasharray="452.4" stroke-dashoffset="452.4" style="transition:stroke-dashoffset .9s"/></svg><b id="rp">0%</b><span>taken</span></div>
+  </div>
+  <div class="grid">
+   <div class="card st"><b id="s1">0</b><span>Today's medicines</span></div>
+   <div class="card st"><b id="s2" style="color:var(--ok)">0</b><span>Taken</span></div>
+   <div class="card st"><b id="s3" style="color:var(--warn)">0</b><span>Pending</span></div>
+   <div class="card st"><b id="s4" style="color:var(--bad)">0</b><span>Missed</span></div>
+  </div>
+ </section>
+ <section class="view" id="v-set">
+  <div class="card" style="margin-top:60px">
+   <div class="set"><div>🔔 Notifications<small id="ns"></small></div><button class="sw" id="sN" data-act="tN" aria-label="Notifications"></button></div>
+   <div class="set"><div>🌙 Dark Mode</div><button class="sw" id="sD" data-act="tD" aria-label="Dark mode"></button></div>
+   <div class="set"><div>🔊 Reminder Sound</div><button class="sw" id="sS" data-act="tS" aria-label="Sound"></button></div>
+   <div class="set"><div>🎵 Ringtone</div><div style="display:flex;gap:6px"><select id="tn"></select><button class="a sq" data-act="prev" aria-label="Preview ringtone">▶</button></div></div>
+   <div class="set"><div>⏰ Default Snooze</div><select id="sz"><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="30">30 min</option></select></div>
+  </div>
+  <div class="card"><b>📲 Alarms when Medora is closed</b><p class="hint" style="margin:6px 0 12px">Export your medicine times to your phone's Calendar. The Calendar app then rings a reminder at each time, every day, even when Medora is closed. After adding, open Calendar settings and pick a notification sound and "alert" importance. Export again after you change any medicine.</p><button class="big" style="margin:0" data-act="ics">Export to phone calendar (.ics)</button></div>
+  <p class="hint" style="padding:0 6px">Reminders ring while Medora is open or running in the background of your browser. Browser JavaScript cannot guarantee alarms when the app or browser is fully closed, so keep Medora open for reliable alerts. Your data stays on this device.</p>
+ </section>
+</main>
+<nav>
+ <button data-v="home" class="on"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+ <button data-v="stats"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Stats</button>
+ <button class="fab" data-act="add" aria-label="Add medicine">+</button>
+ <button data-v="set"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>Settings</button>
+</nav>
+</div>
+
+<div class="ov" id="fo"><div class="sheet" role="dialog" aria-modal="true">
+ <h2 id="ft">Add Medicine</h2>
+ <label for="pn">Person's Name</label><input id="pn" list="pl" placeholder="e.g. Ayesha" autocomplete="off"><datalist id="pl"></datalist><div class="err" id="e-pn"></div>
+ <label for="mn">Medicine Name</label><input id="mn" placeholder="e.g. Panadol" autocomplete="off"><div class="err" id="e-mn"></div>
+ <label for="md">Dose</label><input id="md" placeholder="e.g. 1 tablet, 5ml" autocomplete="off"><div class="err" id="e-md"></div>
+ <label>Times (add more than one for morning + evening)</label><div id="tm"></div><div class="wrap"><button type="button" class="ch" data-act="addT">+ Add another time</button><button type="button" class="ch" data-act="pre" data-t="08:00">🌅 Morning</button><button type="button" class="ch" data-act="pre" data-t="14:00">☀️ Afternoon</button><button type="button" class="ch" data-act="pre" data-t="20:00">🌆 Evening</button><button type="button" class="ch" data-act="pre" data-t="22:00">🌙 Night</button></div><div class="err" id="e-mt"></div>
+ <label>Type</label><div class="wrap" id="ty"></div>
+ <label>Frequency</label><div class="wrap" id="fr"></div>
+ <div class="wrap" id="dy" style="margin-top:10px" hidden></div><div class="err" id="e-dy"></div>
+ <div class="hint" id="wh" hidden>Repeats on the same weekday you save it.</div>
+ <label>Instructions</label><div class="wrap" id="in"></div>
+ <label for="nt">Custom notes (optional)</label><input id="nt" placeholder="e.g. Take with warm water" autocomplete="off"><label for="rt">Reminder ringtone</label><select id="rt"></select>
+ <div class="two"><button data-act="closeF">Cancel</button><button class="p" data-act="saveF">Save Medicine</button></div>
+</div></div>
+
+<div class="ov mid" id="co"><div class="sheet"><h2 id="ct"></h2><p id="cm" style="color:var(--mu)"></p><div class="two"><button data-act="cNo">Cancel</button><button class="dg" data-act="cYes">Delete</button></div></div></div>
+
+<div class="ov mid" id="ro"><div class="sheet"><div class="bell">🔔</div><h2>💊 Medicine Reminder</h2><p id="r1" style="color:var(--mu)"></p><div class="rm" id="r2"></div><p id="r3"></p>
+ <div class="two"><button class="p" data-act="rTake">✓ Taken</button><button id="rSn" data-act="rSnz">⏰ Snooze</button></div></div></div>
+<div id="toast" role="status"></div>
+
+<script>
+"use strict";
+const KEY="medora.v1",$=s=>document.querySelector(s);
+const DN=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],DO=[1,2,3,4,5,6,0];
+const TYPES=[["tablet","💊","Tablet"],["syrup","🧴","Syrup"],["injection","💉","Injection"],["drops","💧","Drops"],["other","🌿","Other"]];
+const FREQ=[["daily","Every Day"],["once","Once"],["weekly","Every Week"],["custom","Custom Days"]];
+const INST=["Before Food","After Food","With Food","Empty Stomach","No Specific Instruction"];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const p2=n=>String(n).padStart(2,"0");
+const ymd=d=>d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate());
+const mins=t=>{const a=t.split(":");return +a[0]*60+ +a[1]};
+const fmt=t=>{const a=t.split(":"),h=+a[0];return (h%12||12)+":"+a[1]+" "+(h<12?"AM":"PM")};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+let S=load(),F={f:"today",person:"",q:""},FM={},editId=null,confirmCb=null,queue=[],curRem=null,curDay=ymd(new Date()),tt;
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&Array.isArray(d.meds))return d}catch(e){}return null}
+var sy;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Could not save data (storage unavailable)")}clearTimeout(sy);sy=setTimeout(syncNative,800)}
+if(!S){const d=ymd(new Date()),mk=(person,name,dose,time,inst,type)=>({id:uid(),person,name,dose,time,freq:"daily",days:[],inst,note:"",type,start:d,taken:{},alerted:"",snooze:0});
+ S={set:{notif:false,dark:false,sound:true,snooze:10},meds:[mk("Ali","Vitamin D","1 Capsule","08:00","With Food","tablet"),mk("Ammi","Metformin","1 Tablet","13:00","With Food","tablet"),mk("Ayesha","Panadol","1 Tablet","20:00","After Food","tablet")]};save()}
+S.set=Object.assign({notif:false,dark:false,sound:true,snooze:10,tone:"classic"},S.set||{});
+S.meds.forEach(m=>{if(!Array.isArray(m.times))m.times=[m.time||"08:00"];m.sn=m.sn||{};m.al=m.al||{};m.taken=m.taken||{};m.tone=m.tone||"";
+ Object.keys(m.taken).forEach(k=>{if(k.indexOf("@")<0){m.taken[k+"@"+m.times[0]]=m.taken[k];delete m.taken[k]}});
+ if(m.alerted){m.al[m.times[0]]=m.alerted;delete m.alerted}if(m.snooze){m.sn[m.times[0]]=m.snooze;delete m.snooze}});
+
+function due(m,d){const ds=ymd(d),wd=d.getDay();
+ if(m.freq==="once")return m.start===ds;
+ if(m.freq==="daily")return true;
+ if(m.freq==="weekly")return wd===new Date(m.start+"T00:00").getDay();
+ return (m.days||[]).includes(wd)}
+function status(m,t){const n=new Date();if(!due(m,n))return"off";
+ if(m.taken&&m.taken[ymd(n)+"@"+t])return"taken";
+ if(m.sn[t]&&m.sn[t]>Date.now())return"pending";
+ return mins(t)<n.getHours()*60+n.getMinutes()?"missed":"pending"}
+function freqLabel(m){if(m.freq==="custom")return DO.filter(d=>m.days.includes(d)).map(d=>DN[d].slice(0,3)).join(", ")||"Custom";
+ return FREQ.find(f=>f[0]===m.freq)[1]}
+const icon=m=>(TYPES.find(t=>t[0]===m.type)||TYPES[0])[1];
+function section(t){const h=mins(t)/60;return h>=5&&h<12?0:h>=12&&h<17?1:h>=17&&h<21?2:3}
+const SEC=["🌅 Morning","☀️ Afternoon","🌆 Evening","🌙 Night"];
+
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("on"),2600)}
+
+function render(){
+ const n=new Date();$("#date").textContent=n.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+ document.documentElement.dataset.theme=S.set.dark?"dark":"light";
+ // person filter
+ const ps=[...new Set(S.meds.map(m=>m.person.trim()))].sort((a,b)=>a.localeCompare(b));
+ if(F.person&&!ps.some(p=>p.toLowerCase()===F.person.toLowerCase()))F.person="";
+ $("#pf").innerHTML='<option value="">👥 All People</option>'+ps.map(p=>`<option value="${esc(p)}"${p.toLowerCase()===F.person.toLowerCase()?" selected":""}>${esc(p)}</option>`).join("");
+ $("#pl").innerHTML=ps.map(p=>`<option value="${esc(p)}">`).join("");
+ const byP=S.meds.filter(m=>!F.person||m.person.toLowerCase()===F.person.toLowerCase()).flatMap(m=>m.times.map(t=>({m,t,s:status(m,t)})));
+ // stats
+ const td=byP.filter(x=>x.s!=="off"),c={taken:0,pending:0,missed:0};td.forEach(x=>c[x.s]++);
+ const pct=td.length?Math.round(c.taken/td.length*100):0;
+ $("#pp").textContent=pct+"%";$("#pb").style.width=pct+"%";
+ $("#pt").textContent=td.length?`${c.taken} of ${td.length} medicine${td.length>1?"s":""} taken`:"No medicines scheduled today";
+ $("#rp").textContent=pct+"%";$("#rc").style.strokeDashoffset=452.4*(1-pct/100);
+ $("#s1").textContent=td.length;$("#s2").textContent=c.taken;$("#s3").textContent=c.pending;$("#s4").textContent=c.missed;
+ // list
+ const q=F.q.trim().toLowerCase();
+ let L=byP.filter(x=>!q||x.m.person.toLowerCase().includes(q)||x.m.name.toLowerCase().includes(q));
+ L=L.filter(x=>F.f==="all"?true:F.f==="today"?x.s!=="off":x.s===F.f);
+ L.sort((a,b)=>mins(a.t)-mins(b.t));
+ document.querySelectorAll("#chips .ch").forEach(b=>b.classList.toggle("on",b.dataset.f===F.f));
+ $("#lt").textContent=F.f==="all"?"All Medicines":F.f==="today"?"Today's Medicines":F.f[0].toUpperCase()+F.f.slice(1)+" Medicines";
+ let h="";
+ if(!S.meds.length)h=`<div class="card empty"><div class="e">💊</div><h3>No medicines added yet</h3><p>Add your first medicine to start receiving reminders.</p><button class="big" style="margin:0" data-act="add">+ Add Medicine</button></div>`;
+ else if(!L.length)h=`<div class="card empty"><div class="e">🔍</div><h3>No medicines found</h3><p>Try a different search or filter.</p><button class="a" data-act="reset">Show all medicines</button></div>`;
+ else for(let s=0;s<4;s++){const g=L.filter(x=>section(x.t)===s);if(g.length)h+=`<div class="sec">${SEC[s]}</div>`+g.map(x=>card(x.m,x.t,x.s)).join("")}
+ $("#list").innerHTML=h;
+ // settings
+ $("#sN").classList.toggle("on",S.set.notif);$("#sD").classList.toggle("on",S.set.dark);$("#sS").classList.toggle("on",S.set.sound);
+ $("#sz").value=String(S.set.snooze);$("#tn").value=S.set.tone;$("#ns").textContent=notifStatus();
+ $("#rSn").textContent="⏰ Snooze "+S.set.snooze+" min";
+}
+function card(m,t,s){const sn=s==="pending"&&m.sn[t]>Date.now();
+ const bd=s==="taken"?"✓ Taken":s==="missed"?"🔴 Missed":s==="off"?"Not today":sn?"Snoozed to "+fmt(p2(new Date(m.sn[t]).getHours())+":"+p2(new Date(m.sn[t]).getMinutes())):"Pending";
+ let a="";
+ if(s==="taken")a=`<button class="a" data-act="undo" data-id="${m.id}" data-t="${t}">↩ Undo</button>`;
+ else if(s!=="off")a=`<button class="a ok" data-act="take" data-id="${m.id}" data-t="${t}">✓ Taken</button><button class="a sn" data-act="snz" data-id="${m.id}" data-t="${t}">⏰ Snooze</button>`;
+ return `<article class="card med ${s}${sn?" snz":""}"><div class="top"><div class="ico">${icon(m)}</div><div class="mt"><h3>${esc(m.name)}</h3><p>👤 For: <b>${esc(m.person)}</b></p></div><span class="bd">${esc(bd)}</span></div>
+ <div class="meta"><span>💧 ${esc(m.dose)}</span><span>⏰ ${fmt(t)}</span><span>📅 ${esc(freqLabel(m))}</span><span>🍽 ${esc(m.inst)}</span></div>
+ ${m.note?`<div class="note">📝 ${esc(m.note)}</div>`:""}
+ <div class="acts">${a}<button class="a sq" data-act="edit" data-id="${m.id}" aria-label="Edit">✏</button><button class="a sq" data-act="del" data-id="${m.id}" aria-label="Delete">🗑</button></div></article>`}
+
+// ---- form
+function chips(el,list,key,multi){$(el).innerHTML=list.map(i=>`<button type="button" class="ch ${multi?"d":""}" data-k="${key}" data-v="${i[0]}">${i[1]}</button>`).join("")}
+function paintForm(){
+ document.querySelectorAll("#ty .ch").forEach(b=>b.classList.toggle("on",b.dataset.v===FM.type));
+ document.querySelectorAll("#fr .ch").forEach(b=>b.classList.toggle("on",b.dataset.v===FM.freq));
+ document.querySelectorAll("#in .ch").forEach(b=>b.classList.toggle("on",b.dataset.v===FM.inst));
+ document.querySelectorAll("#dy .ch").forEach(b=>b.classList.toggle("on",FM.days.includes(+b.dataset.v)));
+ $("#dy").hidden=FM.freq!=="custom";$("#wh").hidden=FM.freq!=="weekly";
+}
+chips("#ty",TYPES.map(t=>[t[0],t[1]+" "+t[2]]),"type");
+chips("#fr",FREQ,"freq");
+chips("#in",INST.map(i=>[i,i]),"inst");
+chips("#dy",DO.map(d=>[d,DN[d]]),"day",true);
+function openForm(id){
+ editId=id||null;const m=id?S.meds.find(x=>x.id===id):null;
+ $("#ft").textContent=m?"Edit Medicine":"Add Medicine";
+ $("#pn").value=m?m.person:F.person;$("#mn").value=m?m.name:"";$("#md").value=m?m.dose:"";$("#rt").value=m?m.tone:"";$("#nt").value=m?m.note:"";
+ FM={type:m?m.type:"tablet",freq:m?m.freq:"daily",inst:m?m.inst:"No Specific Instruction",days:m?m.days.slice():[],times:m?m.times.slice():["08:00"]};
+ document.querySelectorAll(".err").forEach(e=>e.textContent="");
+ paintForm();paintTimes();$("#fo").classList.add("on");setTimeout(()=>$("#pn").focus(),300);
+}
+function paintTimes(){$("#tm").innerHTML=FM.times.map((t,i)=>`<div class="tr"><input type="time" value="${t}" data-i="${i}" aria-label="Time ${i+1}">${FM.times.length>1?`<button type="button" data-act="rmT" data-i="${i}" aria-label="Remove time">✕</button>`:""}</div>`).join("")}
+function closeForm(){$("#fo").classList.remove("on")}
+function saveForm(){
+ const v={person:$("#pn").value.trim(),name:$("#mn").value.trim(),dose:$("#md").value.trim()},err={},times=[...new Set(FM.times.filter(x=>x))].sort();
+ if(!v.person)err.pn="Please enter the person's name.";
+ if(!v.name)err.mn="Please enter the medicine name.";
+ if(!v.dose)err.md="Please enter the dose, e.g. 1 tablet.";
+ if(!times.length)err.mt="Please add at least one time.";
+ if(FM.freq==="custom"&&!FM.days.length)err.dy="Select at least one day.";
+ ["pn","mn","md","mt","dy"].forEach(k=>$("#e-"+k).textContent=err[k]||"");
+ if(Object.keys(err).length)return;
+ const data=Object.assign(v,{freq:FM.freq,days:FM.freq==="custom"?FM.days.slice():[],inst:FM.inst,note:$("#nt").value.trim(),type:FM.type,times,tone:$("#rt").value});
+ if(editId){const m=S.meds.find(x=>x.id===editId);
+  const fc=m.freq!==data.freq,tc=m.times.join()!==data.times.join();Object.assign(m,data);
+  if(fc)m.start=ymd(new Date());if(tc){m.al={};m.sn={}}
+  toast("Medicine updated ✓")}
+ else{S.meds.push(Object.assign({id:uid(),start:ymd(new Date()),taken:{},al:{},sn:{}},data));toast("Medicine added successfully ✓")}
+ save();closeForm();render();
+}
+
+// ---- actions
+function ask(title,msg,cb){$("#ct").textContent=title;$("#cm").textContent=msg;confirmCb=cb;$("#co").classList.add("on")}
+function take(id,t){const m=S.meds.find(x=>x.id===id);if(!m)return;m.taken=m.taken||{};m.taken[ymd(new Date())+"@"+t]=true;delete m.sn[t];save();render();toast("Medicine marked as taken ✓")}
+function snooze(id,t){const m=S.meds.find(x=>x.id===id);if(!m)return;m.sn[t]=Date.now()+S.set.snooze*60000;m.al[t]=ymd(new Date());save();render();toast("Reminder snoozed for "+S.set.snooze+" minutes")}
+function setView(v){document.querySelectorAll(".view").forEach(e=>e.classList.toggle("on",e.id==="v-"+v));document.querySelectorAll("nav [data-v]").forEach(b=>b.classList.toggle("on",b.dataset.v===v));scrollTo(0,0)}
+// ---- native Android alarms (active only inside the Capacitor Android app)
+const LN=()=>{const c=window.Capacitor;return c&&c.isNativePlatform&&c.isNativePlatform()&&c.Plugins?c.Plugins.LocalNotifications:null};
+let exAsked=false;
+async function syncNative(){const ln=LN();if(!ln)return;
+ try{
+  let pr=await ln.checkPermissions();if(pr.display!=="granted")pr=await ln.requestPermissions();
+  if(pr.display!=="granted"){toast("Allow notifications to get alarms");return}
+  if(!exAsked){exAsked=true;const ex=await ln.checkExactNotificationSetting();if(ex.exact_alarm!=="granted"){toast("Please allow Alarms & reminders for Medora");await ln.changeExactNotificationSetting()}}
+  const pd=await ln.getPending();if(pd.notifications.length)await ln.cancel({notifications:pd.notifications.map(x=>({id:x.id}))});
+  for(const k in TONES)await ln.createChannel({id:"medora_"+k,name:"Reminders - "+TONES[k].n,importance:5,visibility:1,vibration:true,sound:k+".wav"});
+  const now=Date.now(),L=[];let id=1;
+  const add=(m,t,at)=>{if(L.length<450)L.push({id:id++,title:"💊 Medicine Reminder",body:m.person+": "+m.name+" - "+m.dose+" ("+fmt(t)+")",channelId:"medora_"+(TONES[m.tone]?m.tone:TONES[S.set.tone]?S.set.tone:"classic"),schedule:{at:at,allowWhileIdle:true},extra:{mid:m.id,t:t}})};
+  S.meds.forEach(m=>m.times.forEach(t=>{const a=mins(t);
+   for(let i=0;i<30;i++){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+i);
+    if(!due(m,d)||(m.taken&&m.taken[ymd(d)+"@"+t]))continue;
+    const at=new Date(d.getFullYear(),d.getMonth(),d.getDate(),Math.floor(a/60),a%60,0);
+    if(at.getTime()>now)add(m,t,at)}
+   if(m.sn[t]&&m.sn[t]>now)add(m,t,new Date(m.sn[t]))}));
+  if(L.length)await ln.schedule({notifications:L})
+ }catch(e){}}
+function exportIcs(){
+ const now=new Date(),E=x=>String(x).replace(/[\\;,]/g,"\\$&").replace(/\n/g,"\\n"),BD=["SU","MO","TU","WE","TH","FR","SA"],L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Medora//EN","CALSCALE:GREGORIAN"];
+ const st=now.getUTCFullYear()+p2(now.getUTCMonth()+1)+p2(now.getUTCDate())+"T"+p2(now.getUTCHours())+p2(now.getUTCMinutes())+p2(now.getUTCSeconds())+"Z";let c=0;
+ S.meds.forEach(m=>m.times.forEach(t=>{
+  let d=null;for(let i=0;i<8&&!d;i++){const x=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i);if(due(m,x))d=x}
+  if(!d)return;
+  const ds=ymd(d).replace(/-/g,""),a=mins(t),b=Math.min(a+5,1439),f=v=>ds+"T"+p2(Math.floor(v/60))+p2(v%60)+"00";
+  const rr=m.freq==="daily"?"FREQ=DAILY":m.freq==="weekly"?"FREQ=WEEKLY":m.freq==="custom"?"FREQ=WEEKLY;BYDAY="+m.days.map(i=>BD[i]).join(","):"";
+  L.push("BEGIN:VEVENT","UID:"+m.id+"-"+t.replace(":","")+"@medora","DTSTAMP:"+st,"DTSTART:"+f(a),"DTEND:"+f(b));
+  if(rr)L.push("RRULE:"+rr);
+  L.push("SUMMARY:"+E("💊 "+m.name+" - "+m.person+" ("+m.dose+")"),"DESCRIPTION:"+E(m.inst+(m.note?" - "+m.note:"")),"BEGIN:VALARM","TRIGGER:PT0S","ACTION:DISPLAY","DESCRIPTION:Medicine time","END:VALARM","END:VEVENT");c++}));
+ if(!c){toast("No upcoming medicines to export");return}
+ L.push("END:VCALENDAR");
+ const u=URL.createObjectURL(new Blob([L.join("\r\n")],{type:"text/calendar"})),k=document.createElement("a");
+ k.href=u;k.download="medora-reminders.ics";document.body.appendChild(k);k.click();k.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
+ toast("Calendar file ready ("+c+" reminders). Open it to add to Calendar.")}
+function notifStatus(){if(!("Notification"in window))return"Not supported in this browser. In-app reminders still work.";
+ const p=Notification.permission;return !S.set.notif?"Off":p==="granted"?"On - allowed":p==="denied"?"Blocked in browser settings":"Waiting for permission"}
+async function toggleNotif(){
+ if(S.set.notif){S.set.notif=false;save();render();return}
+ if(!("Notification"in window)){toast("Notifications aren't supported here. In-app reminders still work.");return}
+ try{let p=Notification.permission;if(p==="default")p=await Notification.requestPermission();
+  S.set.notif=p==="granted";if(p==="denied")toast("Notifications are blocked. Enable them in browser settings.");else if(p==="granted")toast("Notifications enabled ✓")}catch(e){toast("Could not enable notifications")}
+ save();render()}
+
+document.addEventListener("click",e=>{
+ const f=e.target.closest("[data-f]");if(f){F.f=f.dataset.f;render();return}
+ const k=e.target.closest("[data-k]");
+ if(k){const key=k.dataset.k,v=k.dataset.v;
+  if(key==="day"){const d=+v,i=FM.days.indexOf(d);i<0?FM.days.push(d):FM.days.splice(i,1)}else FM[key]=v;paintForm();return}
+ const nv=e.target.closest("[data-v]");if(nv&&nv.closest("nav")){setView(nv.dataset.v);return}
+ if(e.target.classList&&e.target.classList.contains("ov")&&e.target.id==="fo"){closeForm();return}
+ const b=e.target.closest("[data-act]");if(!b)return;const id=b.dataset.id;
+ switch(b.dataset.act){
+  case"add":openForm();break;
+  case"edit":openForm(id);break;
+  case"saveF":saveForm();break;
+  case"closeF":closeForm();break;
+  case"take":take(id,b.dataset.t);break;
+  case"undo":{const m=S.meds.find(x=>x.id===id);if(m){delete m.taken[ymd(new Date())+"@"+b.dataset.t];save();render();toast("Marked as not taken")}break}
+  case"snz":snooze(id,b.dataset.t);break;
+  case"del":{const m=S.meds.find(x=>x.id===id);ask("Delete Medicine?","Are you sure you want to remove this medicine?",()=>{S.meds=S.meds.filter(x=>x.id!==id);save();render();toast("Medicine deleted")});break}
+  case"cNo":$("#co").classList.remove("on");confirmCb=null;break;
+  case"cYes":$("#co").classList.remove("on");if(confirmCb){confirmCb();confirmCb=null}break;
+  case"search":{const s=$("#sbar");s.hidden=!s.hidden;if(!s.hidden){setView("home");$("#q").focus()}else{F.q="";$("#q").value="";render()}break}
+  case"clearq":F.q="";$("#q").value="";$("#q").focus();render();break;
+  case"reset":F.q="";F.f="all";F.person="";$("#q").value="";render();break;
+  case"addT":FM.times.push("");paintTimes();break;
+  case"rmT":FM.times.splice(+b.dataset.i,1);paintTimes();break;
+  case"pre":FM.times=FM.times.filter(x=>x);if(!FM.times.includes(b.dataset.t))FM.times.push(b.dataset.t);paintTimes();break;
+  case"prev":play(S.set.tone);break;
+  case"ics":exportIcs();break;
+  case"tN":toggleNotif();break;
+  case"tD":S.set.dark=!S.set.dark;save();render();break;
+  case"tS":S.set.sound=!S.set.sound;save();render();play(S.set.tone);break;
+  case"rTake":if(curRem)take(curRem.id,curRem.t);closeRem();break;
+  case"rSnz":if(curRem)snooze(curRem.id,curRem.t);closeRem();break;
+ }});
+$("#q").addEventListener("input",e=>{F.q=e.target.value;render()});
+["input","change"].forEach(ev=>$("#tm").addEventListener(ev,e=>{const i=e.target.dataset.i;if(i!==undefined)FM.times[+i]=e.target.value}));
+$("#rt").addEventListener("change",e=>play(e.target.value||S.set.tone));
+$("#pf").addEventListener("change",e=>{F.person=e.target.value;render()});
+$("#sz").addEventListener("change",e=>{S.set.snooze=+e.target.value;save();render();toast("Default snooze: "+S.set.snooze+" minutes")});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeForm();$("#co").classList.remove("on")}});
+
+// ---- reminders
+const TONES={classic:{n:"Classic Beep",t:"sine",d:.22,v:.25,s:[[880,0],[880,.3],[880,.6]]},
+chime:{n:"Soft Chime",t:"triangle",d:.5,v:.3,s:[[523,0],[659,.25],[784,.5],[1047,.75]]},
+melody:{n:"Happy Melody",t:"triangle",d:.25,v:.3,s:[[523,0],[587,.2],[659,.4],[523,.6],[659,.8],[784,1]]},
+siren:{n:"Siren",t:"square",d:.33,v:.12,s:[[600,0],[900,.35],[600,.7],[900,1.05]]},
+digital:{n:"Digital Alarm",t:"square",d:.1,v:.1,s:[[1200,0],[1200,.18],[1200,.36],[1200,.8],[1200,.98],[1200,1.16]]},
+bell:{n:"Temple Bell",t:"sine",d:.9,v:.3,s:[[392,0],[392,.9],[392,1.8]]}};
+let AC=null,ring=null;
+function play(k){const T=TONES[k]||TONES.classic;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();
+ T.s.forEach(x=>{const o=AC.createOscillator(),g=AC.createGain(),st=AC.currentTime+x[1];o.type=T.t;o.frequency.value=x[0];o.connect(g);g.connect(AC.destination);g.gain.setValueAtTime(T.v,st);g.gain.exponentialRampToValueAtTime(.001,st+T.d);o.start(st);o.stop(st+T.d+.02)})}catch(e){}}
+function startRing(k){stopRing();let n=0;const go=()=>{if(S.set.sound&&!LN())play(k)};go();ring=setInterval(()=>{if(++n>12)stopRing();else go()},4000)}
+function stopRing(){clearInterval(ring);ring=null}
+const TOpts=Object.keys(TONES).map(k=>`<option value="${k}">${TONES[k].n}</option>`).join("");
+$("#tn").innerHTML=TOpts;$("#rt").innerHTML='<option value="">Default (from Settings)</option>'+TOpts;
+$("#tn").addEventListener("change",e=>{S.set.tone=e.target.value;save();play(S.set.tone)});
+function fire(m,t){
+ if(navigator.vibrate)try{navigator.vibrate([300,150,300])}catch(e){}
+ if(!LN()&&S.set.notif&&"Notification"in window&&Notification.permission==="granted")try{new Notification("💊 Medicine Reminder",{body:m.person+": "+m.name+" - "+m.dose+" ("+fmt(t)+")",tag:m.id+t})}catch(e){}
+ const k=m.id+"|"+t;if(!queue.includes(k))queue.push(k);showNext()}
+function showNext(){
+ if($("#ro").classList.contains("on"))return;
+ while(queue.length){const q=queue.shift().split("|"),m=S.meds.find(x=>x.id===q[0]),t=q[1];
+  if(m&&status(m,t)!=="taken"&&status(m,t)!=="off"){curRem={id:m.id,t:t};
+   $("#r1").textContent=m.person+"'s medicine is due now";$("#r2").textContent=m.name;$("#r3").textContent=fmt(t)+" · "+m.dose+" · "+m.inst;
+   $("#ro").classList.add("on");startRing(m.tone||S.set.tone);return}}}
+function closeRem(){stopRing();$("#ro").classList.remove("on");curRem=null;setTimeout(showNext,300)}
+function tick(){
+ const n=new Date(),ds=ymd(n),nm=n.getHours()*60+n.getMinutes();
+ curDay=ds;
+ S.meds.forEach(m=>{
+  if(!due(m,n))return;
+  m.times.forEach(tm=>{
+   if(m.taken&&m.taken[ds+"@"+tm])return;
+   if(m.sn[tm]){if(m.sn[tm]<=Date.now()){delete m.sn[tm];save();fire(m,tm)}return}
+   const t=mins(tm);
+   if(m.al[tm]!==ds&&nm>=t&&nm-t<=5){m.al[tm]=ds;save();fire(m,tm)}})});
+ if(!$("#fo").classList.contains("on"))render();
+}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)tick()});
+render();tick();setInterval(tick,15000);syncNative();
+</script>
+</body>
+</html>
